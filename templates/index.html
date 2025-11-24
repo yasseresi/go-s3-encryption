@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Cryptography Lab - S3 Encryption Demo</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent-primary: #38bdf8; /* Cyan */
+      --accent-secondary: #818cf8; /* Indigo */
+      --success: #4ade80; /* Green */
+      --border-color: #334155;
+      --code-bg: #020617;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body { 
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; /* CS Student vibe */
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 2rem;
+    }
+    
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+    
+    header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+    
+    .card { 
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .card h2 {
+      color: var(--accent-primary);
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card h3 {
+      color: var(--text-primary);
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .file-input-wrapper {
+      margin-bottom: 1.5rem;
+    }
+    
+    input[type="file"] {
+      width: 100%;
+      padding: 1rem;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg-color);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    
+    input[type="file"]:hover {
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+    }
+    
+    .radio-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    
+    .radio-group label {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-color);
+      transition: all 0.2s;
+    }
+    
+    .radio-group label:hover {
+      border-color: var(--accent-primary);
+    }
+    
+    .radio-group input[type="radio"] {
+      margin-bottom: 0.5rem;
+    }
+    
+    .radio-group span {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .radio-group small {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    
+    button, .button {
+      background: var(--accent-primary);
+      color: var(--bg-color);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+    }
+    
+    button:hover, .button:hover {
+      background: var(--accent-secondary);
+      transform: translateY(-1px);
+    }
+    
+    textarea { 
+      width: 100%;
+      height: 200px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      background: var(--code-bg);
+      color: var(--success);
+      resize: vertical;
+    }
+    
+    .key-list { 
+      max-height: 300px;
+      overflow: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-color);
+    }
+    
+    .key-list ul {
+      list-style: none;
+    }
+    
+    .key-list li {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .key-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .key-list li:hover {
+      background: var(--card-bg);
+    }
+    
+    .browse-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    
+    .browse-card {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-color);
+      text-align: center;
+    }
+    
+    .info-box {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    
+    .info-box strong {
+      color: var(--accent-primary);
+    }
+    
+    .success-box {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .success-box h2 {
+      color: var(--success);
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      border: none;
+    }
+    
+    code {
+      background: var(--code-bg);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-secondary);
+      font-size: 0.9em;
+    }
+    
+    footer {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .radio-group, .browse-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Cloud Cryptography Lab</h1>
+    </header>
+
+    <div class="card">
+      <h2><span style="font-family: monospace;">$</span> Upload Artifact</h2>
+      <form method="post" action="/upload" enctype="multipart/form-data">
+        <div class="file-input-wrapper">
+          <input type="file" name="file" accept=".txt" required>
+        </div>
+        
+        <p style="margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Select Encryption Protocol:</p>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="method" value="sse-kms" checked>
+            <span>SSE-KMS (Server-Side)</span>
+            <small>AWS managed keys. Transparent encryption at rest.</small>
+          </label>
+          <label>
+            <input type="radio" name="method" value="customer">
+            <span>CSE-AES-GCM (Client-Side)</span>
+            <small>Local AES-256-GCM encryption before upload.</small>
+          </label>
+        </div>
+        
+        <button type="submit">Execute Upload >></button>
+        
+        <div class="info-box" style="margin-top: 1rem;">
+          <strong>Target Bucket:</strong> <code>{{.Bucket}}</code>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2><span style="font-family: monospace;">$</span> Object Browser</h2>
+      <div class="browse-grid">
+        <div class="browse-card">
+          <h3>SSE-KMS Objects</h3>
+          <p class="small" style="margin: 0.5rem 0 1rem; color: var(--text-secondary);">Prefix: <code>sse/</code></p>
+          <form method="get" action="/list">
+            <input type="hidden" name="prefix" value="sse/">
+            <button type="submit" class="button">List Objects</button>
+          </form>
+        </div>
+        <div class="browse-card">
+          <h3>Client-Encrypted Objects</h3>
+          <p class="small" style="margin: 0.5rem 0 1rem; color: var(--text-secondary);">Prefix: <code>cse/</code></p>
+          <form method="get" action="/list">
+            <input type="hidden" name="prefix" value="cse/">
+            <button type="submit" class="button">List Objects</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {{if .list_prefix}}
+    <div class="card">
+      <h2><span style="font-family: monospace;">$</span> ls {{.list_prefix}}</h2>
+      <div class="key-list">
+        {{if .keys}}
+          <ul>
+          {{range .keys}}
+            <li>
+              <span style="font-family: monospace; font-size: 0.9rem; color: var(--accent-primary);">{{.}}</span>
+              <a class="button" style="width: auto; padding: 0.4rem 1rem; font-size: 0.9rem;" href="/download?key={{.}}">Decrypt & View</a>
+            </li>
+          {{end}}
+          </ul>
+        {{else}}
+          <div class="info-box">
+            <p>No objects found in this prefix.</p>
+          </div>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .method}}
+    <div class="card">
+      <div class="success-box">
+        <h2>Operation Successful</h2>
+        <p style="margin: 0; color: var(--text-secondary);">Method: <span class="badge" style="background: var(--success); color: var(--bg-color);">{{.method}}</span></p>
+      </div>
+      
+      <div class="info-box">
+        <p><strong>Filename:</strong> {{.filename}}</p>
+        <p><strong>S3 Key:</strong> <code>{{.s3_key}}</code></p>
+        <p><strong>S3 URL:</strong> <code>{{.s3_url}}</code></p>
+      </div>
+
+      {{if eq .method "customer"}}
+        <h3>Ciphertext Preview (Base64)</h3>
+        <textarea readonly>{{.cipher_b64_snippet}}</textarea>
+        <p class="small" style="color: var(--text-secondary);">Note: This is the raw encrypted data stored in S3. The original plaintext never left your machine unencrypted.</p>
+      {{else if eq .method "sse-kms"}}
+        <div class="info-box">
+          <p><strong>SSE-KMS Encryption:</strong> The file was uploaded over TLS. S3 encrypted it at rest using your KMS key. Decryption happens transparently upon authorized retrieval.</p>
+        </div>
+      {{end}}
+    </div>
+    {{end}}
+
+    {{if .plaintext}}
+    <div class="card">
+      <h2><span style="font-family: monospace;">$</span> cat {{.filename}}</h2>
+      <p class="small" style="margin-bottom: 0.5rem; color: var(--text-secondary);">
+        {{if eq .method "customer-download"}}
+          [System] Decrypted locally using AES-256-GCM key.
+        {{else}}
+          [System] Retrieved from S3 (SSE-KMS decrypted by AWS).
+        {{end}}
+      </p>
+      <textarea readonly>{{.plaintext}}</textarea>
+    </div>
+    {{end}}
+
+    <footer>
+      <p><strong>Cloud Cryptography Lab</strong> &bull; CS 401</p>
+      <p style="margin-top: 0.5rem;">Runtime Key: <code>CUSTOMER_KEY_BASE64</code></p>
+      <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">Warning: Educational Demo Only. </p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Environment variables (contains secrets)
+.env
+
+# Binaries and build artifacts
+main
+*.exe
+*.test
+*.out
+bin/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
